@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-<!-- PULSE developer landing page - deploy as index.html at the ROOT of the andrejmazic.github.io repo (next to app-ads.txt). Self-contained: no external assets. -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -34,6 +33,8 @@
   canvas {
     position: fixed;
     inset: 0;
+    width: 100%;
+    height: 100%;
     display: block;
   }
   main {
@@ -46,14 +47,14 @@
     justify-content: center;
     text-align: center;
     padding: 24px;
-    pointer-events: none; /* taps fall through to the canvas; links re-enable below */
+    pointer-events: none;
   }
   main a, main .soon { pointer-events: auto; }
   h1 {
     font-size: clamp(64px, 16vw, 150px);
     font-weight: 800;
     letter-spacing: 0.14em;
-    margin-right: -0.14em; /* optical centering: letter-spacing pads the right edge */
+    margin-right: -0.14em;
     color: #FFFFFF;
     text-shadow: -3px 0 var(--magenta), 3px 0 var(--cyan), 0 0 34px rgba(0, 255, 255, 0.35);
     animation: chroma 2.6s ease-in-out infinite;
@@ -81,10 +82,18 @@
   }
   .buttons {
     margin-top: 40px;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 16px;
-    justify-content: center;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+    width: 100%;
+    align-items: center;
+  }
+  .buttons > :first-child { justify-self: end; }
+  .buttons > :last-child { justify-self: start; }
+  @media (max-width: 720px) {
+    .buttons { grid-template-columns: 1fr; gap: 14px; }
+    .buttons > :first-child,
+    .buttons > :last-child { justify-self: center; }
   }
   .btn {
     display: inline-block;
@@ -178,7 +187,7 @@
   var W = 0, H = 0;
 
   function resize() {
-    var dpr = window.devicePixelRatio || 1;
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
     W = window.innerWidth;
     H = window.innerHeight;
     canvas.width = W * dpr;
@@ -190,6 +199,7 @@
 
   var COLORS = ["#00FFFF", "#FF00FF", "#FFE600"];
   var MAX_BALLS = 14;
+  var MAX_TOTAL = 40;
   var TRAIL = 26;
   var balls = [];
   var rings = [];
@@ -222,8 +232,10 @@
   }
 
   function burst(y) {
-    var count = balls.length > MAX_BALLS * 2 ? 1 : 3;
-    for (var i = 0; i < count; i++) spawn(y, i % 2 === 0 ? 1 : -1);
+    for (var i = 0; i < 3; i++) {
+      if (balls.length >= MAX_TOTAL) balls.shift();
+      spawn(y, i % 2 === 0 ? 1 : -1);
+    }
     ring(y);
   }
 
@@ -234,11 +246,12 @@
     });
   }
 
-  function step() {
+  function step(dt) {
+    dt = dt || 1;
     for (var j = balls.length - 1; j >= 0; j--) {
       var b = balls[j];
-      b.x += b.vx;
-      b.y += b.vy;
+      b.x += b.vx * dt;
+      b.y += b.vy * dt;
       if (b.y < b.r && b.vy < 0) b.vy = -b.vy;
       if (b.y > H - b.r && b.vy > 0) b.vy = -b.vy;
       if (b.x < -60 || b.x > W + 60) { balls.splice(j, 1); continue; }
@@ -247,8 +260,8 @@
     }
     for (var i = rings.length - 1; i >= 0; i--) {
       var rg = rings[i];
-      rg.r += 2.4;
-      rg.a *= 0.93;
+      rg.r += 2.4 * dt;
+      rg.a *= Math.pow(0.93, dt);
       if (rg.a < 0.02) rings.splice(i, 1);
     }
   }
@@ -258,12 +271,12 @@
     ctx.globalCompositeOperation = "lighter";
 
     // Spawn line: the pulse itself, breathing at the center.
-    var la = 0.28 + 0.16 * Math.sin(now / 480);
+    var la = 0.10 + 0.06 * Math.sin(now / 480);
     ctx.save();
     ctx.shadowColor = "#00FFFF";
-    ctx.shadowBlur = 14;
+    ctx.shadowBlur = 8;
     ctx.strokeStyle = "rgba(0,255,255," + la + ")";
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 1.5;
     ctx.beginPath();
     ctx.moveTo(W / 2, 0);
     ctx.lineTo(W / 2, H);
@@ -281,20 +294,22 @@
 
     for (var j = 0; j < balls.length; j++) {
       var b = balls[j];
-      for (var k = 0; k < b.trail.length - 1; k++) {
+      for (var k = 0; k < b.trail.length - 1; k += 2) {
         var t = 1 - k / b.trail.length;
+        var q = b.trail[Math.min(k + 2, b.trail.length - 1)];
         ctx.strokeStyle = rgba(b.c, t * 0.32);
         ctx.lineWidth = Math.max(b.r * 1.7 * t, 0.5);
         ctx.lineCap = "round";
         ctx.beginPath();
         ctx.moveTo(b.trail[k].x, b.trail[k].y);
-        ctx.lineTo(b.trail[k + 1].x, b.trail[k + 1].y);
+        ctx.lineTo(q.x, q.y);
         ctx.stroke();
       }
 
-      ctx.save();
-      ctx.shadowColor = b.c;
-      ctx.shadowBlur = 16;
+      ctx.fillStyle = rgba(b.c, 0.16);
+      ctx.beginPath();
+      ctx.arc(b.x, b.y, b.r * 2.8, 0, Math.PI * 2);
+      ctx.fill();
       ctx.fillStyle = b.c;
       ctx.beginPath();
       ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
@@ -303,18 +318,21 @@
       ctx.beginPath();
       ctx.arc(b.x, b.y, b.r * 0.45, 0, Math.PI * 2);
       ctx.fill();
-      ctx.restore();
     }
   }
 
+  var lastFrame = 0;
   function frame(now) {
+    // Delta time in 60fps frame units, clamped so a background tab doesn't teleport balls.
+    var dt = lastFrame ? Math.min((now - lastFrame) / 16.667, 3) : 1;
+    lastFrame = now;
     // Ambient heartbeat: the line emits a ball on a steady rhythm.
     if (now - lastSpawn > 1300 && balls.length < MAX_BALLS) {
       spawn();
       ring(balls[balls.length - 1].y);
       lastSpawn = now;
     }
-    step();
+    step(dt);
     draw(now);
     requestAnimationFrame(frame);
   }
