@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<!-- PULSE developer landing page - deploy as index.html at the ROOT of the andrejmazic.github.io repo (next to app-ads.txt). Self-contained: no external assets. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PULSE - Reflex Defense</title>
+<meta name="description" content="PULSE is a neon reflex defense arcade game. Balls erupt from the center line - catch them on both sides before they escape.">
+<meta property="og:title" content="PULSE - Reflex Defense">
+<meta property="og:description" content="One line splits the world. You defend both sides.">
+<meta property="og:url" content="https://andrejmazic.github.io/">
+<meta name="theme-color" content="#05050F">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2305050F'/%3E%3Crect x='30.5' y='8' width='3' height='48' fill='%23181840'/%3E%3Ccircle cx='20' cy='25' r='7' fill='%2300FFFF'/%3E%3Ccircle cx='44' cy='40' r='7' fill='%23FF00FF'/%3E%3C/svg%3E">
+<style>
+  :root {
+    --cyan: #00FFFF;
+    --magenta: #FF00FF;
+    --yellow: #FFE600;
+    --void: #05050F;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background-color: var(--void);
+    background-image:
+      linear-gradient(rgba(0, 255, 255, 0.045) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0, 255, 255, 0.045) 1px, transparent 1px),
+      radial-gradient(ellipse at 50% 40%, #0B0B22 0%, var(--void) 75%);
+    background-size: 100% 48px, 48px 100%, 100% 100%;
+    color: #E8E8F0;
+    overflow: hidden;
+  }
+  canvas {
+    position: fixed;
+    inset: 0;
+    display: block;
+  }
+  main {
+    position: relative;
+    z-index: 2;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 24px;
+    pointer-events: none; /* taps fall through to the canvas; links re-enable below */
+  }
+  main a, main .soon { pointer-events: auto; }
+  h1 {
+    font-size: clamp(64px, 16vw, 150px);
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    margin-right: -0.14em; /* optical centering: letter-spacing pads the right edge */
+    color: #FFFFFF;
+    text-shadow: -3px 0 var(--magenta), 3px 0 var(--cyan), 0 0 34px rgba(0, 255, 255, 0.35);
+    animation: chroma 2.6s ease-in-out infinite;
+    user-select: none;
+  }
+  @keyframes chroma {
+    0%, 100% { text-shadow: -3px 0 var(--magenta), 3px 0 var(--cyan), 0 0 34px rgba(0, 255, 255, 0.35); }
+    50%      { text-shadow: -5px 0 var(--magenta), 5px 0 var(--cyan), 0 0 48px rgba(0, 255, 255, 0.55); }
+  }
+  .sub {
+    font-size: clamp(14px, 3vw, 22px);
+    letter-spacing: 0.62em;
+    margin-right: -0.62em;
+    color: var(--yellow);
+    text-shadow: 0 0 14px rgba(255, 230, 0, 0.55);
+    margin-top: 4px;
+    user-select: none;
+  }
+  .tagline {
+    margin-top: 26px;
+    font-size: clamp(14px, 2.6vw, 18px);
+    color: rgba(232, 232, 240, 0.82);
+    max-width: 32em;
+    line-height: 1.6;
+  }
+  .buttons {
+    margin-top: 40px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    justify-content: center;
+  }
+  .btn {
+    display: inline-block;
+    padding: 14px 26px;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-decoration: none;
+    color: var(--cyan);
+    border: 1px solid rgba(0, 255, 255, 0.75);
+    border-radius: 8px;
+    background: rgba(0, 255, 255, 0.04);
+    box-shadow: 0 0 12px rgba(0, 255, 255, 0.18), inset 0 0 12px rgba(0, 255, 255, 0.06);
+    transition: box-shadow 0.2s ease, background 0.2s ease, transform 0.2s ease;
+  }
+  .btn:hover {
+    background: rgba(0, 255, 255, 0.10);
+    box-shadow: 0 0 26px rgba(0, 255, 255, 0.45), inset 0 0 16px rgba(0, 255, 255, 0.10);
+    transform: translateY(-1px);
+  }
+  .soon {
+    display: inline-block;
+    padding: 14px 26px;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    color: rgba(232, 232, 240, 0.38);
+    border: 1px dashed rgba(232, 232, 240, 0.22);
+    border-radius: 8px;
+    cursor: default;
+    user-select: none;
+  }
+  .hint {
+    margin-top: 44px;
+    font-size: 12px;
+    letter-spacing: 0.3em;
+    margin-right: -0.3em;
+    text-transform: uppercase;
+    color: rgba(0, 255, 255, 0.4);
+    animation: hintpulse 2.2s ease-in-out infinite;
+    user-select: none;
+  }
+  @keyframes hintpulse {
+    0%, 100% { opacity: 0.45; }
+    50% { opacity: 1; }
+  }
+  footer {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 2;
+    padding: 18px;
+    text-align: center;
+    font-size: 13px;
+    color: rgba(232, 232, 240, 0.45);
+  }
+  footer a {
+    color: rgba(0, 255, 255, 0.75);
+    text-decoration: none;
+  }
+  footer a:hover { text-shadow: 0 0 10px rgba(0, 255, 255, 0.8); }
+  footer .sep { margin: 0 10px; color: rgba(232, 232, 240, 0.25); }
+  @media (prefers-reduced-motion: reduce) {
+    h1, .hint { animation: none; }
+  }
+</style>
+</head>
+<body>
+<canvas id="fx" aria-hidden="true"></canvas>
+<main>
+  <h1>PULSE</h1>
+  <p class="sub">REFLEX DEFENSE</p>
+  <p class="tagline">One line splits the world. You defend both sides.<br>
+  Balls erupt from the center - catch them with your twin paddles before they escape.</p>
+  <div class="buttons">
+    <a class="btn" href="https://apps.apple.com/app/id6788370654">DOWNLOAD ON THE APP STORE</a>
+    <span class="soon">GOOGLE PLAY - COMING SOON</span>
+  </div>
+  <p class="hint">Tap anywhere - feed the pulse</p>
+</main>
+<footer>
+  <a href="https://andrejmazic.github.io/pulse-legal/">Privacy Policy</a><span class="sep">|</span><a href="mailto:andrejmazicdev@gmail.com">Support</a><span class="sep">|</span><span>&copy; 2026 Andrej Mazic</span>
+</footer>
+<script>
+(function () {
+  "use strict";
+  var reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var canvas = document.getElementById("fx");
+  var ctx = canvas.getContext("2d");
+  var W = 0, H = 0;
+
+  function resize() {
+    var dpr = window.devicePixelRatio || 1;
+    W = window.innerWidth;
+    H = window.innerHeight;
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  window.addEventListener("resize", resize);
+  resize();
+
+  var COLORS = ["#00FFFF", "#FF00FF", "#FFE600"];
+  var MAX_BALLS = 14;
+  var TRAIL = 26;
+  var balls = [];
+  var rings = [];
+  var lastSpawn = 0;
+
+  function rgba(hex, a) {
+    var r = parseInt(hex.slice(1, 3), 16);
+    var g = parseInt(hex.slice(3, 5), 16);
+    var b = parseInt(hex.slice(5, 7), 16);
+    return "rgba(" + r + "," + g + "," + b + "," + a + ")";
+  }
+
+  function spawn(y, dir) {
+    var angle = Math.random() * 0.9 - 0.45;
+    var speed = 2.1 + Math.random() * 2.3;
+    var d = dir || (Math.random() < 0.5 ? -1 : 1);
+    balls.push({
+      x: W / 2,
+      y: y === undefined ? H * 0.12 + Math.random() * H * 0.76 : y,
+      vx: Math.cos(angle) * speed * d,
+      vy: Math.sin(angle) * speed,
+      r: 3.5 + Math.random() * 3,
+      c: COLORS[(Math.random() * COLORS.length) | 0],
+      trail: []
+    });
+  }
+
+  function ring(y) {
+    rings.push({ y: y, r: 6, a: 0.7 });
+  }
+
+  function burst(y) {
+    var count = balls.length > MAX_BALLS * 2 ? 1 : 3;
+    for (var i = 0; i < count; i++) spawn(y, i % 2 === 0 ? 1 : -1);
+    ring(y);
+  }
+
+  if (!reduced) {
+    window.addEventListener("pointerdown", function (e) {
+      if (e.target.closest("a")) return;
+      burst(Math.min(Math.max(e.clientY, H * 0.05), H * 0.95));
+    });
+  }
+
+  function step() {
+    for (var j = balls.length - 1; j >= 0; j--) {
+      var b = balls[j];
+      b.x += b.vx;
+      b.y += b.vy;
+      if (b.y < b.r && b.vy < 0) b.vy = -b.vy;
+      if (b.y > H - b.r && b.vy > 0) b.vy = -b.vy;
+      if (b.x < -60 || b.x > W + 60) { balls.splice(j, 1); continue; }
+      b.trail.unshift({ x: b.x, y: b.y });
+      if (b.trail.length > TRAIL) b.trail.pop();
+    }
+    for (var i = rings.length - 1; i >= 0; i--) {
+      var rg = rings[i];
+      rg.r += 2.4;
+      rg.a *= 0.93;
+      if (rg.a < 0.02) rings.splice(i, 1);
+    }
+  }
+
+  function draw(now) {
+    ctx.clearRect(0, 0, W, H);
+    ctx.globalCompositeOperation = "lighter";
+
+    // Spawn line: the pulse itself, breathing at the center.
+    var la = 0.28 + 0.16 * Math.sin(now / 480);
+    ctx.save();
+    ctx.shadowColor = "#00FFFF";
+    ctx.shadowBlur = 14;
+    ctx.strokeStyle = "rgba(0,255,255," + la + ")";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(W / 2, 0);
+    ctx.lineTo(W / 2, H);
+    ctx.stroke();
+    ctx.restore();
+
+    for (var i = 0; i < rings.length; i++) {
+      var rg = rings[i];
+      ctx.strokeStyle = "rgba(0,255,255," + rg.a + ")";
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(W / 2, rg.y, rg.r, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    for (var j = 0; j < balls.length; j++) {
+      var b = balls[j];
+      for (var k = 0; k < b.trail.length - 1; k++) {
+        var t = 1 - k / b.trail.length;
+        ctx.strokeStyle = rgba(b.c, t * 0.32);
+        ctx.lineWidth = Math.max(b.r * 1.7 * t, 0.5);
+        ctx.lineCap = "round";
+        ctx.beginPath();
+        ctx.moveTo(b.trail[k].x, b.trail[k].y);
+        ctx.lineTo(b.trail[k + 1].x, b.trail[k + 1].y);
+        ctx.stroke();
+      }
+
+      ctx.save();
+      ctx.shadowColor = b.c;
+      ctx.shadowBlur = 16;
+      ctx.fillStyle = b.c;
+      ctx.beginPath();
+      ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "rgba(255,255,255,0.85)";
+      ctx.beginPath();
+      ctx.arc(b.x, b.y, b.r * 0.45, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  function frame(now) {
+    // Ambient heartbeat: the line emits a ball on a steady rhythm.
+    if (now - lastSpawn > 1300 && balls.length < MAX_BALLS) {
+      spawn();
+      ring(balls[balls.length - 1].y);
+      lastSpawn = now;
+    }
+    step();
+    draw(now);
+    requestAnimationFrame(frame);
+  }
+
+  if (reduced) {
+    // Single static composition for reduced-motion users: line + a few resting comets.
+    for (var s = 0; s < 5; s++) spawn();
+    for (var f = 0; f < 30; f++) step();
+    draw(0);
+  } else {
+    for (var p = 0; p < 6; p++) spawn();
+    requestAnimationFrame(frame);
+  }
+})();
+</script>
+</body>
+</html>
