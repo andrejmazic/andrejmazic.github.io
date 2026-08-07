@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- PULSE developer landing page - deploy as index.html at the ROOT of the andrejmazic.github.io repo (next to app-ads.txt). Self-contained: no external assets. -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -34,7 +35,7 @@
     position: fixed;
     inset: 0;
     width: 100%;
-    height: 100%;
+    height: 100%; /* without explicit CSS size a dpr-scaled canvas renders larger than the viewport */
     display: block;
   }
   main {
@@ -47,14 +48,14 @@
     justify-content: center;
     text-align: center;
     padding: 24px;
-    pointer-events: none;
+    pointer-events: none; /* taps fall through to the canvas; links re-enable below */
   }
   main a, main .soon { pointer-events: auto; }
   h1 {
     font-size: clamp(64px, 16vw, 150px);
     font-weight: 800;
     letter-spacing: 0.14em;
-    margin-right: -0.14em;
+    margin-right: -0.14em; /* optical centering: letter-spacing pads the right edge */
     color: #FFFFFF;
     text-shadow: -3px 0 var(--magenta), 3px 0 var(--cyan), 0 0 34px rgba(0, 255, 255, 0.35);
     animation: chroma 2.6s ease-in-out infinite;
@@ -83,7 +84,7 @@
   .buttons {
     margin-top: 40px;
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr 1fr; /* one button per side of the spawn line, equidistant from center */
     gap: 32px;
     width: 100%;
     align-items: center;
@@ -113,18 +114,6 @@
     background: rgba(0, 255, 255, 0.10);
     box-shadow: 0 0 26px rgba(0, 255, 255, 0.45), inset 0 0 16px rgba(0, 255, 255, 0.10);
     transform: translateY(-1px);
-  }
-  .soon {
-    display: inline-block;
-    padding: 14px 26px;
-    font-size: 14px;
-    font-weight: 700;
-    letter-spacing: 0.18em;
-    color: rgba(232, 232, 240, 0.38);
-    border: 1px dashed rgba(232, 232, 240, 0.22);
-    border-radius: 8px;
-    cursor: default;
-    user-select: none;
   }
   .hint {
     margin-top: 44px;
@@ -171,7 +160,7 @@
   Balls erupt from the center - catch them with your twin paddles before they escape.</p>
   <div class="buttons">
     <a class="btn" href="https://apps.apple.com/app/id6788370654">DOWNLOAD ON THE APP STORE</a>
-    <span class="soon">GOOGLE PLAY - COMING SOON</span>
+    <a class="btn" href="https://play.google.com/store/apps/details?id=com.andrejmazic.pulse">GET IT ON GOOGLE PLAY</a>
   </div>
   <p class="hint">Tap anywhere - feed the pulse</p>
 </main>
@@ -187,7 +176,7 @@
   var W = 0, H = 0;
 
   function resize() {
-    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    var dpr = Math.min(window.devicePixelRatio || 1, 2); /* cap: 3x phone screens cost 2.25x the pixels for no visible gain here */
     W = window.innerWidth;
     H = window.innerHeight;
     canvas.width = W * dpr;
@@ -199,7 +188,7 @@
 
   var COLORS = ["#00FFFF", "#FF00FF", "#FFE600"];
   var MAX_BALLS = 14;
-  var MAX_TOTAL = 40;
+  var MAX_TOTAL = 40; /* hard cap: bursts past this recycle the oldest ball instead of growing the pool */
   var TRAIL = 26;
   var balls = [];
   var rings = [];
@@ -247,7 +236,7 @@
   }
 
   function step(dt) {
-    dt = dt || 1;
+    dt = dt || 1; /* in 60fps frame units */
     for (var j = balls.length - 1; j >= 0; j--) {
       var b = balls[j];
       b.x += b.vx * dt;
@@ -294,6 +283,7 @@
 
     for (var j = 0; j < balls.length; j++) {
       var b = balls[j];
+      /* stride-2 trail: half the stroke calls, segments overlap so it stays continuous */
       for (var k = 0; k < b.trail.length - 1; k += 2) {
         var t = 1 - k / b.trail.length;
         var q = b.trail[Math.min(k + 2, b.trail.length - 1)];
@@ -306,6 +296,7 @@
         ctx.stroke();
       }
 
+      /* layered discs instead of shadowBlur: additive blending fakes the glow at a fraction of the cost */
       ctx.fillStyle = rgba(b.c, 0.16);
       ctx.beginPath();
       ctx.arc(b.x, b.y, b.r * 2.8, 0, Math.PI * 2);
