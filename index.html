@@ -163,8 +163,10 @@
   <p class="tagline">One line splits the world. You defend both sides.<br>
   Balls erupt from the center - catch them with your twin paddles before they escape.</p>
   <div class="buttons">
-    <a class="btn" href="https://apps.apple.com/app/id6788370654">DOWNLOAD ON THE APP STORE</a>
-    <a class="btn" href="https://play.google.com/store/apps/details?id=com.andrejmazic.pulse">GET IT ON GOOGLE PLAY</a>
+    <!-- Attributed store links: installs from the landing show up as channel "site"
+         (ASC Analytics campaign ct=site / Play acquisition utm_source=site) -->
+    <a class="btn" href="https://apps.apple.com/app/id6788370654?pt=129128131&amp;ct=site&amp;mt=8">DOWNLOAD ON THE APP STORE</a>
+    <a class="btn" href="https://play.google.com/store/apps/details?id=com.andrejmazic.pulse&amp;referrer=utm_source%3Dsite%26utm_medium%3Dwebsite%26utm_campaign%3Dpulse">GET IT ON GOOGLE PLAY</a>
   </div>
   <p class="hint">Tap anywhere - feed the pulse</p>
 </main>
@@ -343,5 +345,8 @@
   }
 })();
 </script>
+<!-- GoatCounter pageview counting - same dashboard as the /get smart link
+     (landing shows as "/", smart link clicks as /get/<channel>) -->
+<script data-goatcounter="https://mazzox.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 </body>
 </html>
